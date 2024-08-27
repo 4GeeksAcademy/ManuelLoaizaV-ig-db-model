@@ -19,7 +19,7 @@ class User(Base):
     username = Column(String, nullable=False)
     name = Column(String, nullable=False)
     description = Column(String)
-    profile_photo = Column(Integer, ForeignKey("media.id"))
+    profile_photo_id = Column(Integer, ForeignKey("media.id"))
     former_usernames_count = Column(Integer, nullable=False, default=1)
     account_type = Column(Enum(AccountType), nullable=False)
     is_private = Column(Boolean, nullable=False, default=False)
@@ -121,7 +121,7 @@ class Highlight(Base):
     user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
     index_in_profile = Column(Integer, nullable=False, default=0)
     name = Column(String, nullable=False)
-    cover_photo = Column(Integer, ForeignKey("media.id"))
+    cover_photo_id = Column(Integer, ForeignKey("media.id"))
     created_at = Column(DateTime, nullable=False, default=datetime.now)
     updated_at = Column(DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
 
@@ -133,6 +133,45 @@ class HighlightStory(Base):
     index_in_post = Column(Integer, nullable=False, default=0)
     created_at = Column(DateTime, nullable=False, default=datetime.now)
     updated_at = Column(DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
+
+class Chat(Base):
+    __tablename__ = "chat"
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+    cover_photo_id = Column(Integer, ForeignKey("media.id"))
+    created_at = Column(DateTime, nullable=False, default=datetime.now)
+    updated_at = Column(DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
+
+class ChatMember(Base):
+    __tablename__ = "chat_member"
+    id = Column(Integer, primary_key=True)
+    chat_id = Column(Integer, ForeignKey("chat.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    created_at = Column(DateTime, nullable=False, default=datetime.now)
+
+class Message(Base):
+    __tablename__ = "message"
+    id = Column(Integer, primary_key=True)
+    sender_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    chat_id = Column(Integer, ForeignKey("chat.id"), nullable=False)
+    text = Column(String)
+    media_id = Column(Integer, ForeignKey("media.id"))
+    created_at = Column(DateTime, nullable=False, default=datetime.now)
+    updated_at = Column(DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
+
+class MessageLike(Base):
+    __tablename__ = "message_like"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    message_id = Column(Integer, ForeignKey("message.id"), nullable=False)
+    created_at = Column(DateTime, nullable=False, default=datetime.now)
+
+class Seen(Base):
+    __tablename__ = "seen"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    message_id = Column(Integer, ForeignKey("message.id"), nullable=False)
+    created_at = Column(DateTime, nullable=False, default=datetime.now)
 
 # Draw from SQLAlchemy base
 render_er(Base, 'diagram.png')
