@@ -1,5 +1,5 @@
 import enum
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Enum
+from sqlalchemy import Boolean, Column, DateTime, Double, ForeignKey, Integer, String, Enum
 from sqlalchemy.orm import declarative_base
 from eralchemy2 import render_er
 from datetime import datetime
@@ -35,14 +35,29 @@ class Follow(Base):
     created_at = Column(DateTime, nullable=False, default=datetime.now)
     updated_at = Column(DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
 
+# Based on the following links:
+# https://softwareengineering.stackexchange.com/questions/357900/whats-a-universal-way-to-store-a-geographical-address-location-in-a-database
+# https://developer.android.com/reference/android/location/Address
+class Address(Base):
+    __tablename__ = "address"
+    id = Column(Integer, primary_key=True)
+    address_line = Column(String)
+    admin_area = Column(String)
+    country_code = Column(String)
+    country_name = Column(String)
+    feature_name = Column(String)
+    latitude = Column(Double, nullable=False)
+    longitude = Column(Double, nullable=False)
+    created_at = Column(DateTime, nullable=False, default=datetime.now)
+    updated_at = Column(DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
+
 class Post(Base):
     __tablename__ = "post"
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("user.id"), nullable=False)    
     # I am assuming music is fetched from Spotify API
     music_url = Column(String)
-    # See https://softwareengineering.stackexchange.com/questions/357900/whats-a-universal-way-to-store-a-geographical-address-location-in-a-database
-    # location
+    address_id = Column(Integer, ForeignKey("address.id"))
     is_reel = Column(Boolean, nullable=False, default=False)
     is_ad = Column(Boolean, nullable=False, default=False)
     ad_redirect_url = Column(String)
