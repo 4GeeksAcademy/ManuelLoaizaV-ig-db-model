@@ -130,7 +130,7 @@ class HighlightStory(Base):
     id = Column(Integer, primary_key=True)
     highlight_id = Column(Integer, ForeignKey("highlight.id"), nullable=False)
     story_id = Column(Integer, ForeignKey("story.id"), nullable=False)
-    index_in_post = Column(Integer, nullable=False, default=0)
+    index_in_highlight = Column(Integer, nullable=False, default=0)
     created_at = Column(DateTime, nullable=False, default=datetime.now)
     updated_at = Column(DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
 
