@@ -1,37 +1,138 @@
-import os
-import sys
-from sqlalchemy import Column, ForeignKey, Integer, String
-from sqlalchemy.orm import relationship, declarative_base
-from sqlalchemy import create_engine
+import enum
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Enum
+from sqlalchemy.orm import declarative_base
 from eralchemy2 import render_er
+from datetime import datetime
 
 Base = declarative_base()
 
-class Person(Base):
-    __tablename__ = 'person'
-    # Here we define columns for the table person
-    # Notice that each column is also a normal Python instance attribute.
+class AccountType(enum.Enum):
+    PERSONAL = "personal"
+    CREATOR = "creator"
+    BUSINESS = "business"
+
+class User(Base):
+    __tablename__ = "user"
     id = Column(Integer, primary_key=True)
-    name = Column(String(250), nullable=False)
+    facebook_id = Column(Integer)
+    threads_id = Column(Integer)
+    username = Column(String, nullable=False)
+    name = Column(String, nullable=False)
+    description = Column(String)
+    profile_photo = Column(Integer, ForeignKey("media.id"))
+    former_usernames_count = Column(Integer, nullable=False, default=1)
+    account_type = Column(Enum(AccountType), nullable=False)
+    is_private = Column(Boolean, nullable=False, default=False)
+    created_at = Column(DateTime, nullable=False, default=datetime.now)
+    updated_at = Column(DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
 
-class Address(Base):
-    __tablename__ = 'address'
-    # Here we define columns for the table address.
-    # Notice that each column is also a normal Python instance attribute.
+class Follow(Base):
+    __tablename__ = "follow"
     id = Column(Integer, primary_key=True)
-    street_name = Column(String(250))
-    street_number = Column(String(250))
-    post_code = Column(String(250), nullable=False)
-    person_id = Column(Integer, ForeignKey('person.id'))
-    person = relationship(Person)
+    follower_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    followed_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    is_closed_friend = Column(Boolean, nullable=False, default=False)
+    created_at = Column(DateTime, nullable=False, default=datetime.now)
+    updated_at = Column(DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
 
-    def to_dict(self):
-        return {}
+class Post(Base):
+    __tablename__ = "post"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)    
+    # I am assuming music is fetched from Spotify API
+    music_url = Column(String)
+    # See https://softwareengineering.stackexchange.com/questions/357900/whats-a-universal-way-to-store-a-geographical-address-location-in-a-database
+    # location
+    is_reel = Column(Boolean, nullable=False, default=False)
+    is_ad = Column(Boolean, nullable=False, default=False)
+    ad_redirect_url = Column(String)
+    created_at = Column(DateTime, nullable=False, default=datetime.now)
+    updated_at = Column(DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
 
-## Draw from SQLAlchemy base
-try:
-    result = render_er(Base, 'diagram.png')
-    print("Success! Check the diagram.png file")
-except Exception as e:
-    print("There was a problem genering the diagram")
-    raise e
+class MediaType(enum.Enum):
+    IMAGE = "image"
+    GIF = "gif"
+    VIDEO = "video"
+
+class Media(Base):
+    __tablename__ = "media"
+    id = Column(Integer, primary_key=True)
+    url = Column(String, nullable=False)
+    type = Column(Enum(MediaType), nullable=False)
+    created_at = Column(DateTime, nullable=False, default=datetime.now)
+    updated_at = Column(DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
+
+class Tag(Base):
+    __tablename__ = "tag"
+    id = Column(Integer, primary_key=True)
+    media_id = Column(Integer, ForeignKey("media.id"), nullable=False)
+    tagged_user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    created_at = Column(DateTime, nullable=False, default=datetime.now)
+
+class PostMedia(Base):
+    __tablename__ = "post_media"
+    id = Column(Integer, primary_key=True)
+    media_id = Column(Integer, ForeignKey("media.id"), nullable=False)
+    post_id = Column(Integer, ForeignKey("post.id"), nullable=False)
+    index_in_post = Column(Integer, nullable=False, default=0)
+    created_at = Column(DateTime, nullable=False, default=datetime.now)
+    updated_at = Column(DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
+
+class PostLike(Base):
+    __tablename__ = "post_like"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    post_id = Column(Integer, ForeignKey("post.id"), nullable=False)
+    created_at = Column(DateTime, nullable=False, default=datetime.now)
+
+class Save(Base):
+    __tablename__ = "save"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    post_id = Column(Integer, ForeignKey("post.id"), nullable=False)
+    created_at = Column(DateTime, nullable=False, default=datetime.now)
+
+class Comment(Base):
+    __tablename__ = "comment"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    post_id = Column(Integer, ForeignKey("post.id"), nullable=False)
+    replied_comment_id = Column(Integer, ForeignKey("comment.id"))
+    created_at = Column(DateTime, nullable=False, default=datetime.now)
+    updated_at = Column(DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
+
+class CommentLike(Base):
+    __tablename__ = "comment_like"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    comment_id = Column(Integer, ForeignKey("comment.id"), nullable=False)
+    created_at = Column(DateTime, nullable=False, default=datetime.now)
+
+class Story(Base):
+    __tablename__ = "story"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    media_id = Column(Integer, ForeignKey("media.id"), nullable=False)
+    created_at = Column(DateTime, nullable=False, default=datetime.now)
+
+class Highlight(Base):
+    __tablename__ = "highlight"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    index_in_profile = Column(Integer, nullable=False, default=0)
+    name = Column(String, nullable=False)
+    cover_photo = Column(Integer, ForeignKey("media.id"))
+    created_at = Column(DateTime, nullable=False, default=datetime.now)
+    updated_at = Column(DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
+
+class HighlightStory(Base):
+    __tablename__ = "highlight_story"
+    id = Column(Integer, primary_key=True)
+    highlight_id = Column(Integer, ForeignKey("highlight.id"), nullable=False)
+    story_id = Column(Integer, ForeignKey("story.id"), nullable=False)
+    index_in_post = Column(Integer, nullable=False, default=0)
+    created_at = Column(DateTime, nullable=False, default=datetime.now)
+    updated_at = Column(DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
+
+# Draw from SQLAlchemy base
+render_er(Base, 'diagram.png')
